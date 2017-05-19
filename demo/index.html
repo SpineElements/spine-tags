@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>spine-tags demo</title>
+
+    <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../../iron-demo-helpers/demo-snippet.html">
+    <link rel="import" href="../../../paper-styles/typography.html">
+    <link rel="import" href="../spine-tags.html">
+    <link rel="import" href="../spine-tag.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+      paper-checkbox {
+        padding: 8px 0;
+      }
+
+      #event-detail {
+        padding: 8px 8px 16px 0;
+      }
+
+      b {
+        font-weight: 500;
+      }
+
+      body {
+        font-family: 'Roboto', sans-serif;
+        padding: 0 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="vertical-section-container centered">
+      <h3>Plain spine-tags example</h3>
+      <demo-snippet>
+        <template>
+          <spine-tags>
+            <spine-tag text="TAG 1"></spine-tag>
+            <spine-tag text="TAG 2"></spine-tag>
+            <spine-tag text="TAG 3"></spine-tag>
+          </spine-tags>
+        </template>
+      </demo-snippet>
+
+      <h3>Example with controlled content</h3>
+      <input type="checkbox" id="checkbox">Controlled</input>
+      <div id="event-detail">
+        <b>Event detail:</b> <i><span id="detail"></span></i>
+      </div>
+      <demo-snippet>
+        <template>
+          <spine-tags controlled id="controlled">
+            <spine-tag text="first"></spine-tag>
+            <spine-tag text="second"></spine-tag>
+            <spine-tag text="third"></spine-tag>
+          </spine-tags>
+        </template>
+      </demo-snippet>
+    </div>
+
+    <script>
+      function handleTagsChange(e) {
+        document.body.querySelector('#detail').textContent = `tags : ${JSON.stringify(e.detail.tags)}`;
+      }
+
+      function handleControlledCheckboxChange() {
+        const node = document.body.querySelector('#controlled');
+        node.controlled = !node.controlled;
+      }
+
+      document.body.querySelector('#controlled').addEventListener('spine-tags-change', handleTagsChange);
+      document.body.querySelector('#checkbox').addEventListener('change', handleControlledCheckboxChange);
+    </script>
+  </body>
+</html>

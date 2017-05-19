@@ -1,0 +1,218 @@
+<!--
+  ~ Copyright (c) 2000-2017 TeamDev Ltd. All rights reserved.
+  ~ TeamDev PROPRIETARY and CONFIDENTIAL.
+  ~ Use is subject to license terms.
+  -->
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../paper-input/paper-input.html">
+<link rel="import" href="../../paper-icon-button/paper-icon-button.html">
+
+<!--
+`spine-tag` is styled to look like a label with a removing button.
+It should be used in conjunction with `spine-tags`.
+
+Example:
+```
+<spine-tags>
+  <spine-tag text="TAG 1"></spine-tag>
+  <spine-tag text="TAG 2"></spine-tag>
+  <spine-tag text="TAG 3"></spine-tag>
+</spine-tags>
+```
+
+### Styling
+
+Custom property | Description | Default
+----------------|-------------|----------
+  `--spine-tag-background` | Background color | `#f1f4f7`
+  `--spine-tag-hover-color` | Hover color | `rgba(0, 0, 0, .12)`
+  `--spine-tag` | Mixin applied to the tag | `{}`
+  `--spine-tag-remove-button` | Mixin applied to the <paper-icon-button> | `{}`
+  `--spine-tag-hover-remove-button` | Mixin applied to the <paper-icon-button> when tag is hovered | `{}`
+  `--spine-tag-item-input` | Mixin applied to the text input | `{}`
+  `--spine-tag-text` | Mixin applied to the text | `{ font-size: 13px }`
+-->
+<dom-module id="spine-tag">
+  <template>
+    <style>
+      :host {
+        position: relative;
+        display: inline-block;
+        background: var(--spine-tag-background, #f1f4f7);
+        padding: 8px;
+        margin: 0 4px 4px 0;
+        border-radius: 15px;
+        width: auto;
+        cursor: pointer;
+        vertical-align: top;
+
+        --spine-tag-text: {
+          font-size: 13px;
+          line-height: 14px;
+          color: var(--light-theme-base-color);
+        };
+
+        @apply --spine-tag;
+      }
+
+      :host(:hover) {
+        background: var(--spine-tag-hover-color, rgba(0, 0, 0, .12));
+      }
+
+      :host(:hover) > paper-icon-button {
+        display: block;
+
+        @apply --spine-tag-hover-remove-button;
+      }
+
+      :host(:hover[_editing]) {
+        background: var(--spine-tag-background, #f1f4f7);
+        cursor: default;
+      }
+
+      :host > span {
+        @apply --spine-tag-text;
+
+        position: relative;
+        bottom: 1px;
+      }
+
+      paper-icon-button {
+        position: absolute;
+        right: -4px;
+        top: -8px;
+        padding: 1px 3px 3px;
+        height: 20px;
+        width: 20px;
+        background: white;
+        border-radius: 50%;
+        color: rgba(0, 0, 0, var(--dark-primary-opacity));
+        border: 1px solid var(--light-theme-divider-color);
+        display: none;
+
+        @apply --spine-tag-remove-button;
+      }
+
+      paper-input {
+        background: transparent;
+        width: 85px;
+        height: 19px;
+        padding: 0;
+
+        --paper-input-container-input: {
+          font-size: 13px;
+          color: black;
+        };
+
+        --paper-input-container: {
+          padding: 0;
+          position: relative;
+          bottom: 2px;
+        };
+
+        --paper-input-container-underline: {
+          display: none;
+        };
+
+        --paper-input-container-underline-focus: {
+          display: none;
+        };
+
+        @apply --spine-tag-input;
+      }
+    </style>
+    <paper-icon-button icon="close" tabIndex="-1"
+                       on-click="_deleteItem" on-mousedown="_handleMouseDown"></paper-icon-button>
+    <template is="dom-if" if="[[_editing]]">
+      <paper-input on-blur="_handleBlur" value="{{text}}" no-label-float></paper-input>
+    </template>
+    <template is="dom-if" if="[[!_editing]]">
+      <span>[[text]]</span>
+    </template>
+  </template>
+</dom-module>
+
+<script>
+  class SpineTag extends Polymer.mixinBehaviors(Polymer.IronA11yKeysBehavior ,Polymer.Element) {
+    static get is() { return 'spine-tag'; }
+
+    static get properties() {
+      return {
+        /** The main content of the tag. */
+        text : {
+          type: String,
+          value: ''
+        },
+
+        _editing : {
+          type: Boolean,
+          value: false,
+          reflectToAttribute: true
+        }
+      }
+    }
+
+    get keyBindings() {
+      return {
+        'enter:keydown' : '_handleKeyDown',
+        'esc:keydown' : '_handleKeyDown'
+      }
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+      this._editing = this.text === '';
+    }
+
+    focus() {
+      const input = this.shadowRoot.querySelector('paper-input');
+      if (input) {
+        input.focus();
+      }
+    }
+
+    _deleteItem() {
+      const input = this.shadowRoot.querySelector('paper-input');
+      if (input && this.shadowRoot.activeElement === input) {
+        input.value = '';
+        input.blur();
+      } else {
+        /**
+         * Fired upon the remove button click.
+         *
+         * @event spine-tag-remove
+         */
+        this.dispatchEvent(new CustomEvent('spine-tag-remove', {bubbles : true}));
+      }
+    }
+
+    _handleMouseDown(event) {
+      event.preventDefault();
+    }
+
+    _handleKeyDown(event) {
+      if (event.detail.key === 'esc') {
+        this.text = '';
+      }
+      this._handleBlur();
+    }
+
+    _handleBlur() {
+      const text = this.text.trim();
+      if (!text) {
+        this._deleteItem();
+      } else {
+        this.text = text;
+        this._editing = false;
+        /**
+         * Fired upon the text input blur.
+         *
+         * @event spine-tag-blur
+         */
+        this.dispatchEvent(new CustomEvent('spine-tag-blur', {bubbles: true}));
+      }
+    }
+  }
+
+  customElements.define(SpineTag.is, SpineTag);
+</script>

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>spine-tags test</title>
+
+    <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../spine-tags.html">
+    <link rel="import" href="../spine-tag.html">
+  </head>
+  <body>
+    <test-fixture id="basic">
+      <template>
+        <spine-tags>
+          <spine-tag text="TAG 1"></spine-tag>
+          <spine-tag text="TAG 2"></spine-tag>
+          <spine-tag text="TAG 3"></spine-tag>
+        </spine-tags>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('spine-tags', () => {
+
+        test('instantiating the element works', () => {
+          const element = fixture('basic');
+          assert.equal(element.constructor.is, 'spine-tags');
+        });
+
+        test('rendering inner `spine-tag` items', () => {
+          const element = fixture('basic');
+          assert.equal(element.querySelectorAll('spine-tag').length, 3);
+        });
+      });
+
+      suite('tag adding button', () => {
+        let element;
+        let button;
+
+        setup(() => {
+          element = fixture('basic');
+        });
+
+        test('`spine-tag` added upon button click', done => {
+          Polymer.Base.async(() => {
+            button = element.shadowRoot.querySelector('paper-icon-button');
+            button.click();
+
+            Polymer.Base.async(() => {
+              const tagList = element.querySelectorAll('spine-tag');
+              const newTag = tagList[tagList.length - 1];
+
+              assert(tagList.length === 4, 'spine-tag added');
+              assert(newTag._editing, 'spine-tag is in editing mode');
+              assert(newTag.text === '', 'spine-tag content is empty');
+              done();
+            }, 1);
+          }, 1);
+        });
+      });
+
+      suite('`spine-tags-change` event', () => {
+        let element;
+        let tag;
+        let eventSpy;
+
+        setup(() => {
+          element = fixture('basic');
+          eventSpy = sinon.spy();
+
+          element.addEventListener('spine-tags-change', eventSpy);
+        });
+
+        teardown(() => {
+          element.removeEventListener('spine-tags-change', eventSpy);
+        });
+
+        test('event fired on host element upon an item removing', done => {
+          Polymer.Base.async(() => {
+            tag = element.querySelector('spine-tag');
+            tag.dispatchEvent(new CustomEvent('spine-tag-remove', {bubbles: true}));
+            Polymer.Base.async(() => {
+              assert(eventSpy.callCount > 0, 'spine-tags-change event fired');
+              done();
+            }, 1);
+          }, 1);
+        });
+
+        test('event fired on host element upon an item adding', done => {
+          Polymer.Base.async(() => {
+            tag = element.querySelector('spine-tag');
+            tag.dispatchEvent(new CustomEvent('spine-tag-blur', {bubbles: true}));
+            assert(eventSpy.callCount > 0, 'spine-tags-change event fired');
+            done();
+          }, 1);
+        });
+      });
+    </script>
+  </body>
+</html>

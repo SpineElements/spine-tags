@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+  <title>spine-tags test</title>
+
+  <script src="../../../webcomponentsjs/webcomponents-lite.js"></script>
+  <script src="../../../web-component-tester/browser.js"></script>
+
+  <link rel="import" href="../spine-tag.html">
+</head>
+<body>
+<test-fixture id="basic">
+  <template>
+    <spine-tag text=""></spine-tag>
+  </template>
+</test-fixture>
+
+<script>
+  suite('spine-tag', () => {
+    test('instantiating the element works', () => {
+      const element = fixture('basic');
+      assert.equal(element.constructor.is, 'spine-tag');
+    });
+  });
+
+  suite('blur/remove events', () => {
+    let tag;
+    let blurSpy;
+    let removeSpy;
+
+    setup(() => {
+      tag = fixture('basic');
+      blurSpy = sinon.spy();
+      removeSpy = sinon.spy();
+      tag.addEventListener('spine-tag-blur', blurSpy);
+      tag.addEventListener('spine-tag-remove', removeSpy);
+    });
+
+    teardown(() => {
+      tag.removeEventListener('spine-tag-blur', blurSpy);
+      tag.removeEventListener('spine-tag-remove', removeSpy);
+    });
+
+    test('blur event is fired upon the inner input blur', done => {
+      tag.text = 'text';
+      tag._handleBlur();
+      assert(blurSpy.callCount > 0, 'blur event fired');
+      done();
+    });
+
+    test('remove event is fired upon the closing button click', done => {
+      Polymer.Base.async(() => {
+        tag.shadowRoot.querySelector('paper-icon-button').click();
+        Polymer.Base.async(() => {
+          assert(removeSpy.callCount > 0, 'remove event fired');
+          done();
+        }, 1);
+      }, 1);
+    });
+
+    test('remove event is fired upon losing focus while the content is empty', done => {
+      tag._handleBlur();
+      assert(removeSpy.callCount > 0, 'remove event fired');
+      done();
+    });
+  });
+</script>
+</body>
+</html>

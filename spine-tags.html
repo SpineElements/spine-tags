@@ -1,0 +1,192 @@
+<!--
+  ~ Copyright (c) 2000-2017 TeamDev Ltd. All rights reserved.
+  ~ TeamDev PROPRIETARY and CONFIDENTIAL.
+  ~ Use is subject to license terms.
+  -->
+
+<link rel="import" href="../../polymer/polymer.html">
+<link rel="import" href="../../iron-icons/iron-icons.html">
+<link rel="import" href="spine-tag.html">
+
+<!--
+This element represents an editable list of labels.
+
+It produces the `spine-tags-change` event upon list change.
+
+Example:
+```
+<spine-tags on-spine-tags-change='handleChange'>
+  <spine-tag text="TAG 1"></spine-tag>
+  <spine-tag text="TAG 2"></spine-tag>
+  <spine-tag text="TAG 3"></spine-tag>
+</spine-tags>
+```
+
+### Controlled content
+
+The `controlled` attribute is used to define that the element content is controlled from outside.
+In that scenario, adding or removing tags does not affect the content
+but only causes the `spine-tags-change` event to be fired.
+
+For example, if it's required to bind the content to the `tags` array, use `controlled`
+attribute in conjunction with `tags` array updating in the `spine-tags-change` event handler.
+
+Example:
+```
+<spine-tags on-spine-tags-change='handleChange' controlled>
+  <template is="dom-repeat" items="[[tags]]">
+    <spine-tag text="{{item}}"></spine-tag>
+  </template>
+</spine-tags>
+```
+
+### Styling
+
+The following custom mixins is available for styling:
+
+Custom property                | Description                                   | Default
+-------------------------------|-----------------------------------------------|--------
+`--spine-tags-add-button`      | Mixin applied to the <paper-icon-button>      | `{}`
+`--spine-tags-add-button-text` | Mixin applied to the <paper-icon-button> text | `{}`
+`--spine-tags-add-button-icon` | Mixin applied to the <paper-icon-button> icon | `{}`
+-->
+<dom-module id="spine-tags">
+  <template>
+    <style>
+      :host {
+        display: block;
+        cursor: default;
+      }
+
+      .add-tag-button {
+        display: inline-block;
+
+        @apply --spine-tags-add-button;
+      }
+
+      .add-tag-button span {
+        color: rgba(0, 0, 0, var(--dark-secondary-opacity));
+        font-size: 13px;
+        margin-left: var(--indent-mini);
+
+        @apply --spine-tags-add-button-text;
+      }
+
+      paper-icon-button {
+        border: 1px dashed rgba(0, 0, 0, var(--dark-secondary-opacity));
+        border-radius: 50%;
+        height: 34px;
+        width: 34px;
+        color: rgba(0, 0, 0, var(--dark-secondary-opacity));
+
+        @apply --spine-tags-add-button-icon;
+      }
+    </style>
+
+    <slot></slot>
+    <div class="add-tag-button">
+      <paper-icon-button icon="add" alt="Add tags" on-click="_handleClick"></paper-icon-button>
+      <template is="dom-if" if="[[_empty]]">
+        <span>Add tags</span>
+      </template>
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+  class SpineTags extends Polymer.Element {
+    static get is() {
+      return 'spine-tags';
+    }
+
+    static get properties() {
+      return {
+        /**
+         * If true, adding or removing items will cause the `spine-tags-change` event
+         * but won't affect the content.
+         */
+        controlled : {
+          type  : Boolean,
+          value : false
+        }
+      }
+    }
+
+    connectedCallback() {
+      super.connectedCallback();
+
+      // Seems like it takes some time to connect all child elements, so an async call is required.
+      setTimeout(() => {
+        const tagList = this.querySelectorAll('spine-tag');
+        this._empty = tagList.length === 0;
+      }, 0);
+
+      this.addEventListener('spine-tag-blur', this._handleTagAdd);
+      this.addEventListener('spine-tag-remove', this._handleTagRemove);
+    }
+
+    _handleClick() {
+      this.appendChild(document.createElement('spine-tag'));
+
+      if (this._empty) {
+        this._empty = false;
+      }
+
+      /* It takes some time to connect all child elements after the element is created.
+         So as long as `focus` method affects `spine-tag` inner elements, an async call is required. */
+      setTimeout(() => {
+        const tagItems = this.querySelectorAll('spine-tag');
+        if (tagItems && tagItems.length > 0) {
+          tagItems[tagItems.length - 1].focus();
+        }
+      }, 0);
+    }
+
+    _handleTagAdd(event) {
+      const tagValues = this._getTagListValues(this.querySelectorAll('spine-tag'));
+      this._handleChange(tagValues);
+      if (this.controlled) {
+        this.removeChild(event.composedPath()[0]);
+      }
+    }
+
+    _handleTagRemove(event) {
+      const originalEventTarget = event.composedPath()[0];
+      const tagValues = this._getTagListValues(this.querySelectorAll('spine-tag'), originalEventTarget);
+      this._handleChange(tagValues);
+      if (!this.controlled || originalEventTarget.text === '') {
+        this.removeChild(originalEventTarget);
+      }
+    }
+
+    _handleChange(tagValues) {
+      this.dispatchEvent(this._spineTagsChangeEvent(tagValues));
+      if (tagValues.length === 0) {
+        this._empty = true;
+      }
+    }
+
+    _getTagListValues(tagList, excludedTag) {
+      const values = [];
+      tagList.forEach(item => {
+        if (item !== excludedTag) {
+          values.push(item.text);
+        }
+      });
+      return values;
+    }
+
+    /**
+     * Fired when a tag is added or removed.
+     *
+     * @event spine-tags-change
+     * @param {Array.<string>} tags
+     */
+    _spineTagsChangeEvent(tags) {
+      return new CustomEvent('spine-tags-change', {detail : {tags}});
+    }
+  }
+
+  customElements.define(SpineTags.is, SpineTags);
+</script>
